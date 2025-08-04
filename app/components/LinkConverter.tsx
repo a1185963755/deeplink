@@ -68,13 +68,35 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
 
   const copyToClipboard = async (text: string, index: number) => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopiedIndex(index);
-      message.success(index === -1 ? "全部复制成功" : "复制成功");
-      setTimeout(() => setCopiedIndex(null), 2000);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        setCopiedIndex(index);
+        message.success(index === -1 ? "全部复制成功" : "复制成功");
+        setTimeout(() => setCopiedIndex(null), 2000);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        if (successful) {
+          setCopiedIndex(index);
+          message.success(index === -1 ? "全部复制成功" : "复制成功");
+          setTimeout(() => setCopiedIndex(null), 2000);
+        } else {
+          throw new Error("execCommand copy failed");
+        }
+      }
     } catch (error) {
       console.error("复制失败:", error);
-      message.error("复制失败");
+      message.error("复制失败，请手动复制");
     }
   };
 
