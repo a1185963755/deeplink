@@ -39,7 +39,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
     const links = inputLinks.split("\n").filter((link) => link.trim());
 
     try {
-      const response = await fetch("/api/convert", {
+      const response = await fetch("/dp/api/convert", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
