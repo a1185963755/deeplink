@@ -22,8 +22,7 @@ const platforms: {
     icon: <FaShoppingCart />,
     platformName: "淘宝",
     placeholder: "请输入淘宝链接，支持批量转换，一行一个",
-    supportFormat:
-      "https://m.tb.cn/h.xxx 或 https://pages-fast.m.taobao.com/xxx",
+    supportFormat: "https://m.tb.cn/h.xxx 或 https://pages-fast.m.taobao.com/xxx",
     buttonColor: "#ff6b35",
     resultBgColor: "#fff5f5",
   },
@@ -64,10 +63,7 @@ export default function Home() {
     key: platform.key,
     label: (
       <span className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base font-medium">
-        <span
-          style={{ color: platform.buttonColor }}
-          className="text-base sm:text-lg"
-        >
+        <span style={{ color: platform.buttonColor }} className="text-base sm:text-lg">
           {platform.icon}
         </span>
         <span>{platform.label}</span>
@@ -93,27 +89,15 @@ export default function Home() {
           <div className="text-center">
             <div className="inline-flex items-center gap-2 mb-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
               <h1 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 DP转换工具
               </h1>
             </div>
-            <p className="text-gray-600 text-sm sm:text-base font-medium">
-              永久免费 · 快速转换 · 安全可靠
-            </p>
+            <p className="text-gray-600 text-sm sm:text-base font-medium">永久免费 · 快速转换 · 安全可靠</p>
           </div>
         </div>
       </div>

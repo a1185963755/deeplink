@@ -6,6 +6,7 @@ type Platform = "taobao" | "alipay" | "tmall" | "jd";
 interface ConversionRequest {
   links: string[];
   platform: Platform;
+  useUniversalLink?: boolean;
 }
 
 interface ConversionResult {
@@ -27,13 +28,10 @@ const extractSkuId = (url: string): string => {
 };
 
 // 转换逻辑
-const convertToDeeplink = async (
-  url: string,
-  platform: Platform
-): Promise<string> => {
+const convertToDeeplink = async (url: string, platform: Platform, useUniversalLink: boolean = false): Promise<string> => {
   switch (platform) {
     case "taobao":
-      const taobaoLink = await convertTaoBao(url);
+      const taobaoLink = await convertTaoBao(url, useUniversalLink);
       return taobaoLink || "";
 
     case "alipay":
@@ -56,27 +54,21 @@ const convertToDeeplink = async (
 export async function POST(request: NextRequest) {
   try {
     const body: ConversionRequest = await request.json();
-    const { links, platform } = body;
+    const { links, platform, useUniversalLink = false } = body;
 
     if (!links || !Array.isArray(links) || links.length === 0) {
-      return NextResponse.json(
-        { error: "请提供有效的链接列表" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "请提供有效的链接列表" }, { status: 400 });
     }
 
     if (!platform || !["taobao", "alipay", "tmall", "jd"].includes(platform)) {
-      return NextResponse.json(
-        { error: "请提供有效的平台类型" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "请提供有效的平台类型" }, { status: 400 });
     }
 
     const results: ConversionResult[] = [];
 
     for (const link of links) {
       try {
-        const converted = await convertToDeeplink(link.trim(), platform);
+        const converted = await convertToDeeplink(link.trim(), platform, useUniversalLink);
         results.push({
           converted,
           platform,
@@ -99,7 +91,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-const convertTaoBao = async (link: string): Promise<string | null> => {
+const convertTaoBao = async (link: string, useUniversalLink: boolean = false): Promise<string | null> => {
   if (link.startsWith("https://m.tb.cn")) {
     try {
       const res = await axios.get(link, {
@@ -114,22 +106,32 @@ const convertTaoBao = async (link: string): Promise<string | null> => {
       const matchResult = match && match[1];
       const tk = link.split("?tk=")[1];
       const slk_sid = "rnd"
-        .concat(
-          ((16777216 * (1 + Math.random())) | 0).toString(16).substring(1)
-        )
+        .concat(((16777216 * (1 + Math.random())) | 0).toString(16).substring(1))
         .concat("_")
         .concat(String(new Date().getTime()));
-      return `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(
+      const result = `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(
         matchResult
       )}%26tk%3D${tk}%26app%3Dchrome%26slk_gid%3Dgid_er_sidebar_0&action=ali.open.nav&module=h5&bootImage=0&slk_sid=${slk_sid}&slk_t=${Date.now()}&slk_gid=gid_er_sidebar_0&afcPromotionOpen=false&bc_fl_src=h5_huanduan&source=slk_dp`;
+      if (useUniversalLink) {
+        // Universal Link格式
+        return `https://ace.tb.cn/t?smburl=${encodeURIComponent(result)}`;
+      } else {
+        // 普通deeplink格式
+        return result;
+      }
     } catch (err) {
       console.error("请求失败:", err);
       return null;
     }
   }
-  return `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(
-    link
-  )}`;
+  const result = `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(link)}`;
+  if (useUniversalLink) {
+    // Universal Link格式
+    return `https://ace.tb.cn/t?smburl=${encodeURIComponent(result)}`;
+  } else {
+    // 普通deeplink格式
+    return `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(link)}`;
+  }
 };
 
 const convertAlipay = async (link: string) => {
@@ -141,9 +143,7 @@ const convertAlipay = async (link: string) => {
       });
 
       const finalUrl = response.request.res.responseUrl?.split("scheme=")?.[1]
-        ? decodeURIComponent(
-            response.request.res.responseUrl?.split("scheme=")?.[1]
-          )
+        ? decodeURIComponent(response.request.res.responseUrl?.split("scheme=")?.[1])
         : link;
 
       return finalUrl;
@@ -152,9 +152,7 @@ const convertAlipay = async (link: string) => {
       return null;
     }
   }
-  return `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(
-    link
-  )}`;
+  return `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(link)}`;
 };
 
 const convertTmall = async (link: string) => {

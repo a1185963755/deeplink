@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CopyOutlined, CheckOutlined } from "@ant-design/icons";
-import { Button, message, Input, List, Tag } from "antd";
+import { Button, message, Input, List, Tag, Switch } from "antd";
 
 interface ConversionResult {
   original: string;
@@ -28,6 +28,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
   const [results, setResults] = useState<ConversionResult[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [useUniversalLink, setUseUniversalLink] = useState(false);
 
   const handleConvert = async () => {
     if (!inputLinks.trim()) {
@@ -47,6 +48,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
         body: JSON.stringify({
           links,
           platform,
+          useUniversalLink: platform === "taobao" ? useUniversalLink : false,
         }),
       });
 
@@ -122,10 +124,29 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
           />
         </div>
 
+        {/* Universal Link Toggle for Taobao */}
+        {platform === "taobao" && (
+          <div className="mb-4 flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">转换选项</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">Deeplink</span>
+              <Switch
+                checked={useUniversalLink}
+                onChange={setUseUniversalLink}
+                size="small"
+                style={{ backgroundColor: useUniversalLink ? buttonColor : undefined }}
+              />
+              <span className="text-xs text-gray-600">Universal Link</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-4">
           <div className="text-xs sm:text-sm text-gray-500 bg-gray-100/50 px-3 py-2 rounded-lg">
             <span className="font-medium">支持格式：</span>
-            <code className="text-xs bg-white px-2 py-1 rounded ml-1 break-all">{supportFormat}</code>
+            <code className="text-xs">{supportFormat}</code>
           </div>
           <Button
             type="primary"
@@ -185,7 +206,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
               result.success && (
                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-gray-900 font-mono line-clamp-3">{result.converted}</div>
+                    <div className="text-sm text-gray-900 font-mono line-clamp-3 break-all">{result.converted}</div>
                   </div>
                   <Button
                     type="text"
