@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CopyOutlined, CheckOutlined } from "@ant-design/icons";
 import { Button, message, Input, List, Tag, Switch } from "antd";
+import QrScanner from "qr-scanner";
 
 interface ConversionResult {
   original: string;
@@ -21,7 +22,7 @@ interface LinkConverterProps {
   resultBgColor: string;
 }
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan"  | "xianyu";
 
 export default function LinkConverter({ platform, platformName, placeholder, supportFormat, buttonColor, resultBgColor }: LinkConverterProps) {
   const [inputLinks, setInputLinks] = useState("");
@@ -29,6 +30,99 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
   const [isConverting, setIsConverting] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [useUniversalLink, setUseUniversalLink] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const appendLinks = (newLinks: string[]) => {
+    const existing = inputLinks
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const merged = Array.from(new Set([...existing, ...newLinks.map((s) => s.trim()).filter(Boolean)]));
+    setInputLinks(merged.join("\n"));
+  };
+
+  const extractLinksFromText = (text: string): string[] => {
+    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+    const matches = text.match(urlRegex) || [];
+    return matches;
+  };
+
+  const decodeFileToLinks = async (file: File): Promise<string[]> => {
+    try {
+      const result: unknown = await QrScanner.scanImage(file, { returnDetailedScanResult: true } as any);
+      const raw = typeof result === "string" ? result : (result as any)?.data ?? "";
+      const links = extractLinksFromText(raw);
+      return links.length > 0 ? links : raw ? [raw] : [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const handleFiles = async (files: File[] | FileList) => {
+    const list: File[] = Array.from(files);
+    if (list.length === 0) return;
+    message.loading({ content: "正在解析二维码...", key: "qr-parse" });
+    try {
+      const allLinks: string[] = [];
+      for (const f of list) {
+        if (!f.type.startsWith("image/")) continue;
+        const links = await decodeFileToLinks(f);
+        allLinks.push(...links);
+      }
+      const unique = Array.from(new Set(allLinks.map((s) => s.trim()).filter(Boolean)));
+      if (unique.length > 0) {
+        appendLinks(unique);
+        message.success({ content: `已解析 ${unique.length} 个链接`, key: "qr-parse" });
+      } else {
+        message.warning({ content: "未在二维码中识别到链接", key: "qr-parse" });
+      }
+    } finally {
+      message.destroy("qr-parse");
+    }
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items || items.length === 0) return;
+    const imageFiles: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind === "file" && it.type.startsWith("image/")) {
+        const file = it.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      await handleFiles(imageFiles);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      await handleFiles(files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      await handleFiles(files);
+      e.target.value = "";
+    }
+  };
 
   const handleConvert = async () => {
     if (!inputLinks.trim()) {
@@ -111,6 +205,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
           <Input.TextArea
             value={inputLinks}
             onChange={(e) => setInputLinks(e.target.value)}
+            onPaste={handlePaste}
             placeholder={placeholder}
             allowClear
             autoSize={{ minRows: 6, maxRows: 10 }}
@@ -122,6 +217,19 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
               backdropFilter: "blur(8px)",
             }}
           />
+        </div>
+
+        {/* QR Import Area */}
+        <div
+          className="mb-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-center cursor-pointer hover:bg-gray-100"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onClick={triggerFileSelect}
+          onPaste={handlePaste}
+        >
+          <p className="text-sm text-gray-700 font-medium">拖拽或粘贴二维码图片到此区域，或点击选择图片</p>
+          <p className="text-xs text-gray-500 mt-1">支持批量导入，自动识别并追加到输入框</p>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="hidden" />
         </div>
 
         {/* Universal Link Toggle for Taobao */}
@@ -165,7 +273,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
             }}
             className="hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl w-full sm:w-auto"
           >
-            {isConverting ? "转换中..." : "获取链接"}
+            {isConverting ? "转换中..." : "🗲极速转换"}
           </Button>
         </div>
       </div>

@@ -1,10 +1,10 @@
 "use client";
 
 import { Tabs } from "antd";
-import { FaShoppingCart, FaCreditCard, FaStore, FaGift } from "react-icons/fa";
+import { FaShoppingCart, FaCreditCard, FaStore, FaGift, FaMobileAlt, FaUtensils, FaRecycle } from "react-icons/fa";
 import LinkConverter from "./components/LinkConverter";
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu";
 
 const platforms: {
   key: Platform;
@@ -55,6 +55,36 @@ const platforms: {
     supportFormat: "任意链接",
     buttonColor: "#e60012",
     resultBgColor: "#fff2f0",
+  },
+  {
+    key: "pdd",
+    label: "拼多多",
+    icon: <FaMobileAlt />,
+    platformName: "拼多多",
+    placeholder: "请输入拼多多链接，支持批量转换，一行一个",
+    supportFormat: "https://mobile.yangkeduo.com/xxx 或 https://pinduoduo.com/xxx",
+    buttonColor: "#e02e24",
+    resultBgColor: "#fff1f0",
+  },
+  {
+    key: "meituan",
+    label: "美团",
+    icon: <FaUtensils />,
+    platformName: "美团",
+    placeholder: "请输入美团链接，支持批量转换，一行一个",
+    supportFormat: "任意链接",
+    buttonColor: "#ffc300",
+    resultBgColor: "#fffbf0",
+  },
+  {
+    key: "xianyu",
+    label: "闲鱼",
+    icon: <FaRecycle />,
+    platformName: "闲鱼",
+    placeholder: "请输入闲鱼链接，支持批量转换，一行一个",
+    supportFormat: "任意链接",
+    buttonColor: "#00c896",
+    resultBgColor: "#f0fdf4",
   },
 ];
 
@@ -114,7 +144,6 @@ export default function Home() {
               className="conversion-tabs"
               tabBarStyle={{
                 marginBottom: 24,
-                borderBottom: "1px solid #f0f0f0",
               }}
               tabBarGutter={0}
             />

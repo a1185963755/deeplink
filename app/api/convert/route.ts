@@ -1,7 +1,8 @@
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import { NextRequest, NextResponse } from "next/server";
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu";
 
 interface ConversionRequest {
   links: string[];
@@ -46,6 +47,18 @@ const convertToDeeplink = async (url: string, platform: Platform, useUniversalLi
       const jdLink = await convertJd(url);
       return jdLink || "";
 
+    case "pdd":
+      const pddLink = await convertPdd(url);
+      return pddLink || "";
+
+    case "meituan":
+      const meituanLink = await convertMeituan(url);
+      return meituanLink || "";
+
+    case "xianyu":
+      const xianyuLink = await convertXianyu(url);
+      return xianyuLink || "";
+
     default:
       return url;
   }
@@ -60,7 +73,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "请提供有效的链接列表" }, { status: 400 });
     }
 
-    if (!platform || !["taobao", "alipay", "tmall", "jd"].includes(platform)) {
+    if (!platform || !["taobao", "alipay", "tmall", "jd", "pdd", "meituan", "xianyu"].includes(platform)) {
       return NextResponse.json({ error: "请提供有效的平台类型" }, { status: 400 });
     }
 
@@ -90,6 +103,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "服务器内部错误" }, { status: 500 });
   }
 }
+const generateId = () => {
+  const uuid = uuidv4(); // 生成 UUID v4
+  const timestamp = Date.now(); // 当前时间戳（毫秒）
+  return `${uuid}-${timestamp}`;
+};
 
 const convertTaoBao = async (link: string, useUniversalLink: boolean = false): Promise<string | null> => {
   if (link.startsWith("https://m.tb.cn")) {
@@ -135,7 +153,8 @@ const convertTaoBao = async (link: string, useUniversalLink: boolean = false): P
 };
 
 const convertAlipay = async (link: string) => {
-  if (link.startsWith("https://ur.alipay.com")) {
+  const id = generateId();
+  if (link.startsWith("https://ur.alipay.com") || link.startsWith("https://qr.alipay.com")) {
     try {
       const response = await axios.get(link, {
         responseType: "text",
@@ -146,13 +165,13 @@ const convertAlipay = async (link: string) => {
         ? decodeURIComponent(response.request.res.responseUrl?.split("scheme=")?.[1])
         : link;
 
-      return finalUrl;
+      return `${finalUrl}&launchKey=${id}`;
     } catch (err) {
       console.error("请求失败:", err);
       return null;
     }
   }
-  return `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(link)}`;
+  return `alipays://platformapi/startapp?appId=20000067&url=${encodeURIComponent(link)}&launchKey=${id}`;
 };
 
 const convertTmall = async (link: string) => {
@@ -162,4 +181,36 @@ const convertTmall = async (link: string) => {
 const convertJd = async (link: string) => {
   return `
 openapp.jdmobile://virtual?params={"category":"jump","sourcetype":"sourcetype_test","des":"m","url":"${link}","unionsource":"awake","channel":"c463034d12227447a79d0fefaef3fa18","union_open":"union_cps"}`;
+};
+
+const convertPdd = async (link: string): Promise<string | null> => {
+  try {
+    const url = new URL(link);
+    const pathname = url.pathname;
+    return `pinduoduo://com.xunmeng.pinduoduo${pathname}`;
+  } catch (err) {
+    return `pinduoduo://com.xunmeng.pinduoduo/${link}`;
+  }
+};
+
+const convertMeituan = async (link: string): Promise<string | null> => {
+  try {
+    // 美团转换逻辑：将link进行encodeURIComponent编码后前面拼接imeituan://www.meituan.com/web?url=
+    const encodedUrl = encodeURIComponent(link);
+    return `imeituan://www.meituan.com/web?url=${encodedUrl}`;
+  } catch (error) {
+    console.error("美团链接转换失败:", error);
+    return null;
+  }
+};
+
+const convertXianyu = async (link: string): Promise<string | null> => {
+  try {
+    // 闲鱼转换逻辑：将link进行encodeURIComponent编码后前面拼接fleamarket://2.taobao.com/onepiece?source=auto&action=ali.open.nav&module=h5&bootimage=0&h5Url=
+    const encodedUrl = encodeURIComponent(link);
+    return `fleamarket://2.taobao.com/onepiece?source=auto&action=ali.open.nav&module=h5&bootimage=0&h5Url=${encodedUrl}`;
+  } catch (error) {
+    console.error("闲鱼链接转换失败:", error);
+    return null;
+  }
 };
