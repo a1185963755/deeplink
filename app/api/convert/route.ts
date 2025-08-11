@@ -142,13 +142,20 @@ const convertTaoBao = async (link: string, useUniversalLink: boolean = false): P
       return null;
     }
   }
-  const result = `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(link)}`;
+  let result = `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(link)}`;
+  if (link.startsWith("https://pages-fast.m.taobao.com")) {
+    const slk_sid = "rnd"
+      .concat(((16777216 * (1 + Math.random())) | 0).toString(16).substring(1))
+      .concat("_")
+      .concat(String(new Date().getTime()));
+    result += `%26app%3Dchrome%26slk_gid%3Dgid_er_sidebar_0&action=ali.open.nav&module=h5&bootImage=0&slk_sid=${slk_sid}&slk_t=${Date.now()}&slk_gid=gid_er_sidebar_0&afcPromotionOpen=false&bc_fl_src=h5_huanduan&source=slk_dp`;
+  }
   if (useUniversalLink) {
     // Universal Link格式
     return `https://ace.tb.cn/t?smburl=${encodeURIComponent(result)}`;
   } else {
     // 普通deeplink格式
-    return `tbopen://m.taobao.com/tbopen/index.html?h5Url=${encodeURIComponent(link)}`;
+    return result;
   }
 };
 
