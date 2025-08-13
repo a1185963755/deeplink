@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* Ant Design */
-@import 'antd/dist/reset.css';
+@import "antd/dist/reset.css";
 
 /* Custom styles for conversion tabs */
 .conversion-tabs .ant-tabs-tab {
@@ -46,18 +46,66 @@
   }
 }
 
+/* 移动端响应式网格布局 */
+@media (max-width: 640px) {
+  .conversion-tabs .ant-tabs-nav-list {
+    display: grid !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .conversion-tabs .ant-tabs-tab {
+    margin: 2px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 48px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .conversion-tabs .ant-tabs-tab-active {
+    background: rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .conversion-tabs .ant-tabs-ink-bar {
+    display: none !important;
+  }
+}
+
+/* 大屏手机 - 每行4个 */
+@media (min-width: 480px) and (max-width: 640px) {
+  .conversion-tabs .ant-tabs-nav-list {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* 中等手机 - 每行3个 */
+@media (min-width: 360px) and (max-width: 479px) {
+  .conversion-tabs .ant-tabs-nav-list {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* 小屏手机 - 每行2个 */
+@media (max-width: 359px) {
+  .conversion-tabs .ant-tabs-nav-list {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
 /* Mobile-friendly touch targets */
 @media (max-width: 640px) {
   .ant-btn {
     min-height: 44px !important;
   }
-  
+
   .ant-tabs-tab {
     min-height: 44px !important;
   }
 }
-
-
 
 /* Smooth animations */
 * {
@@ -99,12 +147,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
 }
 
 @layer utilities {
