@@ -204,7 +204,7 @@ const convertMeituan = async (link: string): Promise<string | null> => {
   try {
     // 美团转换逻辑：将link进行encodeURIComponent编码后前面拼接imeituan://www.meituan.com/web?url=
     const encodedUrl = encodeURIComponent(link);
-    return `imeituan://www.meituan.com/web?url=${encodedUrl}`;
+    return `imeituan://www.meituan.com/search?q=${encodedUrl}`;
   } catch (error) {
     console.error("美团链接转换失败:", error);
     return null;
