@@ -262,10 +262,9 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
           <span className="font-medium">二维码导入</span>
         </div>
         <div
-          className="mb-4 group rounded-xl border border-dashed border-gray-300/80 bg-white/60 backdrop-blur-sm p-5 cursor-pointer hover:border-blue-400 hover:bg-white/80 transition-colors"
+          className="mb-4 group rounded-xl border border-dashed border-gray-300/80 bg-white/60 backdrop-blur-sm p-5 hover:border-blue-400 hover:bg-white/80 transition-colors"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          onClick={triggerFileSelect}
           onPaste={handlePaste}
           aria-label="导入二维码"
         >
