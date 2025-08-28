@@ -133,7 +133,7 @@ export default function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-12">
         {/* Conversion Card */}
         <div className="bg-white/70 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 mb-8 sm:mb-16">
           <div className="p-4 sm:p-8">

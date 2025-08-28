@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { CopyOutlined, CheckOutlined } from "@ant-design/icons";
+import { useState, useRef, useEffect } from "react";
+import { CopyOutlined, CheckOutlined, CameraOutlined, PictureOutlined, QrcodeOutlined, EditOutlined, ThunderboltFilled } from "@ant-design/icons";
 import { Button, message, Input, List, Tag, Switch } from "antd";
 import QrScanner from "qr-scanner";
+// Loosen typings to support different versions of qr-scanner
+const QrScannerAny: any = QrScanner as any;
 
 interface ConversionResult {
   original: string;
@@ -22,7 +24,7 @@ interface LinkConverterProps {
   resultBgColor: string;
 }
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan"  | "xianyu";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu";
 
 export default function LinkConverter({ platform, platformName, placeholder, supportFormat, buttonColor, resultBgColor }: LinkConverterProps) {
   const [inputLinks, setInputLinks] = useState("");
@@ -31,6 +33,11 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [useUniversalLink, setUseUniversalLink] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Camera scan states
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const scannerRef = useRef<QrScanner | null>(null);
 
   const appendLinks = (newLinks: string[]) => {
     const existing = inputLinks
@@ -124,6 +131,74 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
     }
   };
 
+  // Start camera QR scanning
+  const startCameraScan = async () => {
+    try {
+      const hasCamera = (await (QrScannerAny.hasCamera?.() ?? Promise.resolve(true))) as boolean;
+      if (!hasCamera) {
+        message.error("未检测到摄像头，无法进行扫码");
+        return;
+      }
+      setIsScanning(true);
+      // Delay to ensure video element mounted
+      setTimeout(() => {
+        if (!videoRef.current) return;
+        if (scannerRef.current) {
+          try {
+            (scannerRef.current as any).stop?.();
+          } catch {}
+          try {
+            (scannerRef.current as any).destroy?.();
+          } catch {}
+          scannerRef.current = null;
+        }
+        const onDecode = (result: string | { data?: string }) => {
+          const raw = typeof result === "string" ? result : result?.data ?? "";
+          const links = extractLinksFromText(raw);
+          const payload = links.length > 0 ? links : raw ? [raw] : [];
+          if (payload.length > 0) {
+            appendLinks(payload);
+            message.success("已识别并添加二维码内容");
+            stopCameraScan();
+          }
+        };
+        const scanner = new QrScannerAny(videoRef.current, (res: any) => onDecode(res as any), {
+          preferredCamera: "environment",
+          highlightScanRegion: true,
+          maxScansPerSecond: 8,
+        });
+        scannerRef.current = scanner;
+        (scannerRef.current as any).start?.();
+      }, 50);
+    } catch (err) {
+      console.error(err);
+      message.error("开启相机失败，请检查权限");
+      setIsScanning(false);
+    }
+  };
+
+  const stopCameraScan = () => {
+    try {
+      (scannerRef.current as any)?.stop?.();
+      (scannerRef.current as any)?.destroy?.();
+    } finally {
+      scannerRef.current = null;
+      setIsScanning(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      try {
+        (scannerRef.current as any)?.stop?.();
+        (scannerRef.current as any)?.destroy?.();
+      } finally {
+        scannerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleConvert = async () => {
     if (!inputLinks.trim()) {
       message.warning("请输入需要转换的链接");
@@ -201,7 +276,10 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
       {/* Input Area */}
       <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl border border-gray-200/50 p-4 sm:p-6">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">输入链接</label>
+          <div className="mb-2 flex items-center gap-2 text-gray-700 text-sm">
+            <EditOutlined />
+            <span className="font-medium">输入链接</span>
+          </div>
           <Input.TextArea
             value={inputLinks}
             onChange={(e) => setInputLinks(e.target.value)}
@@ -220,15 +298,62 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
         </div>
 
         {/* QR Import Area */}
+        <div className="mb-2 flex items-center gap-2 text-gray-700 text-sm">
+          <QrcodeOutlined />
+          <span className="font-medium">二维码导入</span>
+        </div>
         <div
-          className="mb-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-center cursor-pointer hover:bg-gray-100"
+          className="mb-4 group rounded-xl border border-dashed border-gray-300/80 bg-white/60 backdrop-blur-sm p-5 cursor-pointer hover:border-blue-400 hover:bg-white/80 transition-colors"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onClick={triggerFileSelect}
           onPaste={handlePaste}
+          aria-label="导入二维码"
         >
-          <p className="text-sm text-gray-700 font-medium">拖拽或粘贴二维码图片到此区域，或点击选择图片</p>
-          <p className="text-xs text-gray-500 mt-1">支持批量导入，自动识别并追加到输入框</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+            {/* Left: Description */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-100 shadow-sm">
+                  <QrcodeOutlined className="text-xl" />
+                </div>
+                <div className="truncate">
+                  <div className="text-gray-900 font-medium text-sm sm:text-base">拖拽/粘贴二维码图片到此区域</div>
+                  <div className="text-xs text-gray-500 mt-0.5">支持扫一扫/选择图片，自动识别并追加到输入框</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Actions */}
+            <div className="w-full sm:w-auto flex items-stretch justify-center gap-2 sm:gap-3 flex-col sm:flex-row">
+              <Button
+                size="large"
+                icon={<PictureOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerFileSelect();
+                }}
+                className="w-full sm:w-auto h-12 px-5 text-base"
+                style={{ lineHeight: 1.1 }}
+              >
+                从图片选择
+              </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<CameraOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startCameraScan();
+                }}
+                className="w-full sm:w-auto h-12 px-5 text-base"
+                style={{ lineHeight: 1.1, backgroundColor: buttonColor, borderColor: buttonColor }}
+              >
+                相机扫一扫
+              </Button>
+            </div>
+          </div>
+
           <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="hidden" />
         </div>
 
@@ -273,7 +398,8 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
             }}
             className="hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl w-full sm:w-auto"
           >
-            {isConverting ? "转换中..." : "🗲极速转换"}
+            <ThunderboltFilled className="text-xs text-gray-600" style={{ color: "#ffffff" }} />
+            {isConverting ? "转换中..." : "极速转换"}
           </Button>
         </div>
       </div>
@@ -329,6 +455,21 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
                 </div>
               )
           )}
+        </div>
+      )}
+
+      {/* Camera Scan Overlay */}
+      {isScanning && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
+          <div className="relative w-[90vw] max-w-sm aspect-square bg-black rounded-xl overflow-hidden">
+            <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" muted playsInline />
+            {/* Corner frame */}
+            <div className="absolute inset-6 border-2 border-white/70 rounded-lg pointer-events-none" />
+            <div className="absolute bottom-3 left-0 right-0 text-center text-white text-sm">将二维码置于取景框内自动识别</div>
+            <button onClick={stopCameraScan} className="absolute top-2 right-2 bg-white/90 text-gray-800 text-xs px-2 py-1 rounded">
+              关闭
+            </button>
+          </div>
         </div>
       )}
     </div>
