@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Tabs } from "antd";
 import { FaShoppingCart, FaCreditCard, FaStore, FaGift, FaMobileAlt, FaUtensils, FaRecycle } from "react-icons/fa";
 import LinkConverter from "./components/LinkConverter";
@@ -89,6 +90,53 @@ const platforms: {
 ];
 
 export default function Home() {
+  // Fake metrics state (initialized after mount to avoid hydration mismatch)
+  const [online, setOnline] = React.useState<number | null>(null);
+  const [visits, setVisits] = React.useState<number | null>(null);
+
+  // Stable, day-accumulating visits algorithm (update once per day)
+  React.useEffect(() => {
+    const totalKey = "metrics_visits_total";
+    const dateKey = "metrics_visits_date";
+
+    const randomBetween = (min: number, max: number) => Math.random() * (max - min) + min;
+    const getDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    const now = new Date();
+    const todayStr = getDateStr(now);
+    let total = Number(localStorage.getItem(totalKey));
+    if (!Number.isFinite(total) || total <= 0) {
+      total = Math.floor(randomBetween(38000, 40000));
+    }
+
+    const storedDate = localStorage.getItem(dateKey);
+    if (!storedDate) {
+      localStorage.setItem(dateKey, todayStr);
+      localStorage.setItem(totalKey, String(total));
+    } else if (storedDate !== todayStr) {
+      // New day: add a small daily increment and persist
+      const dailyDelta = Math.floor(randomBetween(200, 800));
+      total = total + dailyDelta;
+      localStorage.setItem(dateKey, todayStr);
+      localStorage.setItem(totalKey, String(total));
+    }
+
+    setVisits(total);
+    // Initialize online immediately (avoid waiting for the first interval tick)
+    setOnline(500 + Math.floor(Math.random() * 50));
+
+    // Only animate online users; visits stays fixed for the day
+    const timer = setInterval(() => {
+      setOnline((o) => {
+        const current = typeof o === "number" ? o : 500; // default after first mount
+        const delta = Math.round((Math.random() - 0.5) * 6);
+        const next = current + delta;
+        return Math.max(50, Math.min(600, Math.round(next)));
+      });
+    }, 60 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
   const items = platforms.map((platform) => ({
     key: platform.key,
     label: (
@@ -115,7 +163,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200/30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="text-center">
             <div className="inline-flex items-center gap-2 mb-4">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -128,9 +176,29 @@ export default function Home() {
               </h1>
             </div>
             <p className="text-gray-600 text-sm sm:text-base font-medium">永久免费 · 快速转换 · 安全可靠</p>
+
+            {/* Fake metrics under subtitle */}
+            <div className="mt-3 inline-flex items-center gap-4 rounded-full border border-gray-200/80 bg-white/70 backdrop-blur-sm px-3 py-1.5 text-xs sm:text-sm shadow-sm">
+              <span className="inline-flex items-center gap-1 text-gray-700">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                当前在线
+                <span className="font-semibold text-gray-900">{typeof online === "number" ? online.toLocaleString() : "--"}</span>
+              </span>
+              <span className="text-gray-300 hidden sm:inline">|</span>
+              <span className="inline-flex items-center gap-1 text-gray-700">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+                </svg>
+                累计访问
+                <span className="font-semibold text-gray-900">{typeof visits === "number" ? visits.toLocaleString() : "--"}</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Footer spacer */}
+      <div className="h-4" />
 
       {/* Main Content */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-12">
