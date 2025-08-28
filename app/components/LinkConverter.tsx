@@ -354,7 +354,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
             </div>
           </div>
 
-          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="hidden" />
+          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" multiple onChange={onFileChange} className="hidden" />
         </div>
 
         {/* Universal Link Toggle for Taobao */}
