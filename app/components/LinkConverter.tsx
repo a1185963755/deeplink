@@ -33,6 +33,7 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [useUniversalLink, setUseUniversalLink] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   // Camera scan states
   const [isScanning, setIsScanning] = useState(false);
@@ -123,57 +124,15 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
     fileInputRef.current?.click();
   };
 
+  const triggerCameraCapture = () => {
+    cameraInputRef.current?.click();
+  };
+
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       await handleFiles(files);
       e.target.value = "";
-    }
-  };
-
-  // Start camera QR scanning
-  const startCameraScan = async () => {
-    try {
-      const hasCamera = (await (QrScannerAny.hasCamera?.() ?? Promise.resolve(true))) as boolean;
-      if (!hasCamera) {
-        message.error("未检测到摄像头，无法进行扫码");
-        return;
-      }
-      setIsScanning(true);
-      // Delay to ensure video element mounted
-      setTimeout(() => {
-        if (!videoRef.current) return;
-        if (scannerRef.current) {
-          try {
-            (scannerRef.current as any).stop?.();
-          } catch {}
-          try {
-            (scannerRef.current as any).destroy?.();
-          } catch {}
-          scannerRef.current = null;
-        }
-        const onDecode = (result: string | { data?: string }) => {
-          const raw = typeof result === "string" ? result : result?.data ?? "";
-          const links = extractLinksFromText(raw);
-          const payload = links.length > 0 ? links : raw ? [raw] : [];
-          if (payload.length > 0) {
-            appendLinks(payload);
-            message.success("已识别并添加二维码内容");
-            stopCameraScan();
-          }
-        };
-        const scanner = new QrScannerAny(videoRef.current, (res: any) => onDecode(res as any), {
-          preferredCamera: "environment",
-          highlightScanRegion: true,
-          maxScansPerSecond: 8,
-        });
-        scannerRef.current = scanner;
-        (scannerRef.current as any).start?.();
-      }, 50);
-    } catch (err) {
-      console.error(err);
-      message.error("开启相机失败，请检查权限");
-      setIsScanning(false);
     }
   };
 
@@ -344,17 +303,20 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
                 icon={<CameraOutlined />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  startCameraScan();
+                  // HTTP 环境：直接唤起系统相机拍照并作为图片上传
+                  triggerCameraCapture();
                 }}
                 className="w-full sm:w-auto h-12 px-5 text-base"
                 style={{ lineHeight: 1.1, backgroundColor: buttonColor, borderColor: buttonColor }}
               >
-                相机扫一扫
+                拍照上传
               </Button>
             </div>
           </div>
 
-          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" multiple onChange={onFileChange} className="hidden" />
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onFileChange} className="hidden" />
+          {/* Camera-only capture for HTTP fallback (iOS/Android) */}
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={onFileChange} className="hidden" />
         </div>
 
         {/* Universal Link Toggle for Taobao */}
