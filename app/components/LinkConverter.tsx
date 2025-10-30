@@ -396,26 +396,32 @@ export default function LinkConverter({ platform, platformName, placeholder, sup
           </div>
 
           {/* Results List */}
-          {results.map(
-            (result, index) =>
-              result.success && (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-gray-900 font-mono line-clamp-3 break-all">{result.converted}</div>
-                  </div>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={copiedIndex === index ? <CheckOutlined /> : <CopyOutlined />}
-                    onClick={() => copyToClipboard(result.converted, index)}
-                    className="flex-shrink-0 hover:text-blue-600 transition-colors duration-200"
-                    style={{ color: buttonColor }}
-                  >
-                    {copiedIndex === index ? "已复制" : "复制"}
-                  </Button>
+          {results
+            .map((result, originalIndex) => ({ ...result, originalIndex }))
+            .filter((result) => result.success)
+            .map((result, successIndex) => (
+              <div key={result.originalIndex} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div
+                  className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
+                  style={{ backgroundColor: buttonColor }}
+                >
+                  {successIndex + 1}
                 </div>
-              )
-          )}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-gray-900 font-mono line-clamp-3 break-all">{result.converted}</div>
+                </div>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={copiedIndex === result.originalIndex ? <CheckOutlined /> : <CopyOutlined />}
+                  onClick={() => copyToClipboard(result.converted, result.originalIndex)}
+                  className="flex-shrink-0 hover:text-blue-600 transition-colors duration-200"
+                  style={{ color: buttonColor }}
+                >
+                  {copiedIndex === result.originalIndex ? "已复制" : "复制"}
+                </Button>
+              </div>
+            ))}
         </div>
       )}
 
