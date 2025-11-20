@@ -2,7 +2,7 @@ import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { NextRequest, NextResponse } from "next/server";
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu" | "douji";
 
 interface ConversionRequest {
   links: string[];
@@ -59,6 +59,10 @@ const convertToDeeplink = async (url: string, platform: Platform, useUniversalLi
       const xianyuLink = await convertXianyu(url);
       return xianyuLink || "";
 
+    case "douji":
+      const doujiLink = await convertDouji(url);
+      return doujiLink || "";
+
     default:
       return url;
   }
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "请提供有效的链接列表" }, { status: 400 });
     }
 
-    if (!platform || !["taobao", "alipay", "tmall", "jd", "pdd", "meituan", "xianyu"].includes(platform)) {
+    if (!platform || !["taobao", "alipay", "tmall", "jd", "pdd", "meituan", "xianyu", "douji"].includes(platform)) {
       return NextResponse.json({ error: "请提供有效的平台类型" }, { status: 400 });
     }
 
@@ -218,6 +222,17 @@ const convertXianyu = async (link: string): Promise<string | null> => {
     return `fleamarket://2.taobao.com/onepiece?source=auto&action=ali.open.nav&module=h5&bootimage=0&h5Url=${encodedUrl}`;
   } catch (error) {
     console.error("闲鱼链接转换失败:", error);
+    return null;
+  }
+};
+
+const convertDouji = async (link: string): Promise<string | null> => {
+  try {
+    // 抖音极速版转换逻辑：将link进行encodeURIComponent编码后前面拼接 snssdk2329://search?keyword=
+    const encodedUrl = encodeURIComponent(link);
+    return `snssdk2329://search?keyword=${encodedUrl}`;
+  } catch (error) {
+    console.error("抖音极速版链接转换失败:", error);
     return null;
   }
 };

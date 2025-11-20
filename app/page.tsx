@@ -2,10 +2,10 @@
 
 import React from "react";
 import { Tabs } from "antd";
-import { FaShoppingCart, FaCreditCard, FaStore, FaGift, FaMobileAlt, FaUtensils, FaRecycle } from "react-icons/fa";
+import { FaShoppingCart, FaCreditCard, FaStore, FaGift, FaMobileAlt, FaUtensils, FaRecycle, FaTiktok } from "react-icons/fa";
 import LinkConverter from "./components/LinkConverter";
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu" | "douji";
 
 const platforms: {
   key: Platform;
@@ -87,6 +87,16 @@ const platforms: {
     buttonColor: "#00c896",
     resultBgColor: "#f0fdf4",
   },
+  {
+    key: "douji",
+    label: "抖极",
+    icon: <FaTiktok />,
+    platformName: "抖极",
+    placeholder: "请输入抖极文案，支持批量转换，一行一个",
+    supportFormat: "任意",
+    buttonColor: "#fe2c55",
+    resultBgColor: "#fff0f2",
+  },
 ];
 
 export default function Home() {
@@ -105,8 +115,8 @@ export default function Home() {
     const now = new Date();
     const todayStr = getDateStr(now);
     let total = Number(localStorage.getItem(totalKey));
-    if (!Number.isFinite(total) || total <= 0) {
-      total = Math.floor(randomBetween(38000, 40000));
+    if (!Number.isFinite(total) || total <= 0 ||total<380000) {
+      total = Math.floor(randomBetween(380000, 400000));
     }
 
     const storedDate = localStorage.getItem(dateKey);
@@ -123,7 +133,7 @@ export default function Home() {
 
     setVisits(total);
     // Initialize online immediately (avoid waiting for the first interval tick)
-    setOnline(500 + Math.floor(Math.random() * 50));
+    setOnline(5000 + Math.floor(Math.random() * 200));
 
     // Only animate online users; visits stays fixed for the day
     const timer = setInterval(() => {

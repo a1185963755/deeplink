@@ -24,7 +24,7 @@ interface LinkConverterProps {
   resultBgColor: string;
 }
 
-type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu";
+type Platform = "taobao" | "alipay" | "tmall" | "jd" | "pdd" | "meituan" | "xianyu" | "douji";
 
 export default function LinkConverter({ platform, platformName, placeholder, supportFormat, buttonColor, resultBgColor }: LinkConverterProps) {
   const [inputLinks, setInputLinks] = useState("");
