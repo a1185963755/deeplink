@@ -196,9 +196,7 @@ openapp.jdmobile://virtual?params={"category":"jump","sourcetype":"sourcetype_te
 
 const convertPdd = async (link: string): Promise<string | null> => {
   try {
-    const url = new URL(link);
-    const pathname = url.pathname;
-    return `pinduoduo://com.xunmeng.pinduoduo${pathname}`;
+    return `pinduoduo://com.xunmeng.pinduoduo/search_result.html?search_key=${link}`;
   } catch (err) {
     return `pinduoduo://com.xunmeng.pinduoduo/${link}`;
   }
@@ -229,7 +227,7 @@ const convertXianyu = async (link: string): Promise<string | null> => {
 const convertDouji = async (link: string): Promise<string | null> => {
   try {
     // 抖音极速版转换逻辑：将link进行encodeURIComponent编码后前面拼接 snssdk2329://search?keyword=
-    const encodedUrl = encodeURIComponent(link);
+    const encodedUrl = encodeURIComponent(link).replace("%20","+");
     return `snssdk2329://search?keyword=${encodedUrl}`;
   } catch (error) {
     console.error("抖音极速版链接转换失败:", error);
